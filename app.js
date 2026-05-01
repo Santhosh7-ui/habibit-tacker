@@ -39,7 +39,7 @@ function initTooltips() {
       tooltip.textContent = target.getAttribute('data-tooltip');
       const rect = target.getBoundingClientRect();
       tooltip.style.left = rect.left + (rect.width / 2) + 'px';
-      tooltip.style.top = rect.top + 'px';
+      tooltip.style.top = rect.bottom + 'px';
       tooltip.classList.add('show');
     }
   });
@@ -233,6 +233,28 @@ const neonLinePlugin = {
   }
 };
 
+const mountainLabelsPlugin = {
+  id: 'mountainLabels',
+  afterDatasetsDraw: (chart) => {
+    if (!chart.config.options.plugins.mountainLabels) return;
+    const ctx = chart.ctx;
+    const dataset = chart.data.datasets[0];
+    const meta = chart.getDatasetMeta(0);
+    
+    ctx.save();
+    ctx.font = "600 11px Inter";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#6b7280';
+    
+    meta.data.forEach((element, index) => {
+      const val = dataset.data[index];
+      ctx.fillText(val, element.x, element.y - 12);
+    });
+    ctx.restore();
+  }
+};
+
 function updateBlinkingDot(chart, h) {
   const dot = document.getElementById('trend-blinking-dot');
   if (!dot) return;
@@ -374,7 +396,9 @@ function renderAnalytics(){
   
   const compType=document.getElementById('comp-select').value;
   let chartType = compType;
-  if(compType==='horizontalBar') chartType = 'bar'; // horizontal is handled via indexAxis
+  let isMountain = false;
+  if(compType==='horizontalBar') chartType = 'bar';
+  if(compType==='mountain') { chartType = 'line'; isMountain = true; }
   
   const aLabels=habits.map(h=>h.emoji+' '+h.name.slice(0,12));
   const aBg=habits.map(h=>h.color+'dd');
@@ -383,15 +407,90 @@ function renderAnalytics(){
   destroyChart('comp');
   const compCfg={
     type:chartType,
-    data:{labels:aLabels,datasets:[{label: metricLabel,data:aData,backgroundColor:aBg,borderColor:habits.map(h=>h.color),borderWidth:isRadar||isPolar||chartType==='line'?2:0,borderRadius:(!isRadar&&!isPolar&&chartType!=='line')?6:0, fill: chartType==='line'?false:true, tension: chartType==='line'?0.4:0}]},
-    options:{indexAxis:isHoriz?'y':'x',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:(isRadar)?{r:{beginAtZero:true,ticks:{font:{size:9,family:'Inter'}}}}:(isPolar)?{}:{x:{grid:{display:!isHoriz},ticks:{font:{size:10,family:'Inter'}}},y:{beginAtZero:true,ticks:{font:{size:10,family:'Inter'}},grid:{color:'rgba(128,128,128,.1)'}}}},
-    plugins: chartType === 'line' ? [neonLinePlugin] : []
+    data:{
+      labels:aLabels,
+      datasets:[{
+        label: metricLabel,
+        data:aData,
+        backgroundColor: isMountain ? (context) => {
+           if(!context.chart.ctx) return '#6C63FF';
+           const ctx = context.chart.ctx;
+           const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height);
+           gradient.addColorStop(0, '#6C63FFaa');
+           gradient.addColorStop(1, '#6C63FF00');
+           return gradient;
+        } : aBg,
+        borderColor: isMountain ? '#6C63FF' : habits.map(h=>h.color),
+        borderWidth:isRadar||isPolar||chartType==='line'?2:0,
+        borderRadius:(!isRadar&&!isPolar&&chartType!=='line')?6:0, 
+        fill: isMountain ? true : (chartType==='line'?false:true), 
+        tension: isMountain ? 0 : (chartType==='line'?0.4:0),
+        pointRadius: isMountain ? 5 : 0,
+        pointBackgroundColor: isMountain ? '#fff' : undefined,
+        pointBorderColor: isMountain ? '#6C63FF' : undefined,
+        pointBorderWidth: isMountain ? 2 : undefined
+      }]
+    },
+    options:{
+      indexAxis:isHoriz?'y':'x',
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        mountainLabels: isMountain
+      },
+      scales:(isRadar)?{r:{beginAtZero:true,ticks:{font:{size:9,family:'Inter'}}}}:(isPolar)?{}:{
+        x:{grid:{display:!isHoriz&&!isMountain},ticks:{font:{size:10,family:'Inter'}}},
+        y:{beginAtZero:true,ticks:{font:{size:10,family:'Inter'}},grid:{color:'rgba(128,128,128,.1)',display:!isMountain},border:{display:!isMountain}}
+      }
+    },
+    plugins: isMountain ? [mountainLabelsPlugin] : (chartType === 'line' ? [neonLinePlugin] : [])
   };
   charts.comp=new Chart(document.getElementById('compChart'),compCfg);
   
   const distType=document.getElementById('dist-select').value;
+  let isDistMountain = distType === 'mountain';
+  let dChartType = isDistMountain ? 'line' : distType;
+  
   destroyChart('dist');
-  charts.dist=new Chart(document.getElementById('distChart'),{type:distType,data:{labels:aLabels,datasets:[{data:aData,backgroundColor:aBg,borderWidth:2,borderColor:'var(--surface)',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11,family:'Inter'},padding:12,usePointStyle:true}}}}});
+  charts.dist=new Chart(document.getElementById('distChart'),{
+    type:dChartType,
+    data:{
+      labels:aLabels,
+      datasets:[{
+        data:aData,
+        backgroundColor: isDistMountain ? (context) => {
+           if(!context.chart.ctx) return '#F59E0B';
+           const ctx = context.chart.ctx;
+           const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height);
+           gradient.addColorStop(0, '#F59E0Baa');
+           gradient.addColorStop(1, '#F59E0B00');
+           return gradient;
+        } : aBg,
+        borderWidth:2,
+        borderColor: isDistMountain ? '#F59E0B' : 'var(--surface)',
+        hoverOffset:6,
+        fill: isDistMountain ? true : false,
+        tension: isDistMountain ? 0 : 0,
+        pointRadius: isDistMountain ? 5 : 0,
+        pointBackgroundColor: isDistMountain ? '#fff' : undefined,
+        pointBorderColor: isDistMountain ? '#F59E0B' : undefined,
+        pointBorderWidth: isDistMountain ? 2 : undefined
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend: isDistMountain ? {display:false} : {position:'right',labels:{font:{size:11,family:'Inter'},padding:12,usePointStyle:true}},
+        mountainLabels: isDistMountain
+      },
+      scales: isDistMountain ? {
+        x: { grid:{display:false}, ticks:{font:{size:10,family:'Inter'}} },
+        y: { beginAtZero:true, grid:{display:false}, border:{display:false}, ticks:{font:{size:10,family:'Inter'}} }
+      } : {}
+    },
+    plugins: isDistMountain ? [mountainLabelsPlugin] : []
+  });
   
   const sorted=[...habits].sort((a,b)=>calcStreak(b)-calcStreak(a));
   document.getElementById('leaderboard').innerHTML=sorted.map((h,i)=>`

@@ -20,11 +20,11 @@
 <body>
 
 <div class="topbar">
-  <button class="hamburger" id="hamburger" onclick="toggleSidebar()" data-tooltip="Open Navigation Menu">
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()" data-tooltip="Toggle the sidebar menu to navigate between sections">
     <span></span><span></span><span></span>
   </button>
   <span class="topbar-logo" id="topbar-title">HabitFlow</span>
-  <button class="btn-add" onclick="showModal()" data-tooltip="Create a new habit"> + Add</button>
+  <button class="btn-add" onclick="showModal()" data-tooltip="Open the form to create and track a new daily habit"> + Add</button>
 </div>
 
 <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
@@ -35,9 +35,9 @@
   </div>
   <div style="padding:12px 0">
     <ul class="sidebar-nav">
-      <li><a onclick="navigate('today')" id="nav-today" class="active" data-tooltip="View today's habits">🏠 &nbsp;Today</a></li>
-      <li><a onclick="navigate('analytics')" id="nav-analytics" data-tooltip="See overall progress">📊 &nbsp;Analytics</a></li>
-      <li><a onclick="navigate('settings')" id="nav-settings" data-tooltip="Adjust your preferences">⚙️ &nbsp;Settings</a></li>
+      <li><a onclick="navigate('today')" id="nav-today" class="active" data-tooltip="View and manage your habit check-ins for today">🏠 &nbsp;Today</a></li>
+      <li><a onclick="navigate('analytics')" id="nav-analytics" data-tooltip="View charts and statistics about your overall habit performance">📊 &nbsp;Analytics</a></li>
+      <li><a onclick="navigate('settings')" id="nav-settings" data-tooltip="Configure your application preferences and data">⚙️ &nbsp;Settings</a></li>
     </ul>
   </div>
   <div class="sidebar-section">My Habits</div>
@@ -49,8 +49,8 @@
 
   <!-- TODAY -->
   <div class="view active" id="view-today">
-    <div class="quote-banner" id="quote-banner" data-tooltip="Motivational quote of the day">
-      <button class="quote-refresh" onclick="fetchQuote()" data-tooltip="Get a new quote">↻ New</button>
+    <div class="quote-banner" id="quote-banner" data-tooltip="Your daily motivational quote to keep you inspired">
+      <button class="quote-refresh" onclick="fetchQuote()" data-tooltip="Fetch a different motivational quote">↻ New</button>
       <div class="quote-text" id="q-text">Loading inspiration...</div>
       <div class="quote-author" id="q-author"></div>
     </div>
@@ -130,9 +130,9 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h2 style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">Overview</h2>
       <div class="time-filter">
-        <button class="tf-btn active" onclick="setTimeFilter('day')" id="tf-day" data-tooltip="Last 30 days">Day</button>
-        <button class="tf-btn" onclick="setTimeFilter('month')" id="tf-month" data-tooltip="Last 12 months">Month</button>
-        <button class="tf-btn" onclick="setTimeFilter('year')" id="tf-year" data-tooltip="All time by year">Year</button>
+        <button class="tf-btn active" onclick="setTimeFilter('day')" id="tf-day" data-tooltip="Filter analytics to show data for the last 30 days">Day</button>
+        <button class="tf-btn" onclick="setTimeFilter('month')" id="tf-month" data-tooltip="Filter analytics to show data for the current year by months">Month</button>
+        <button class="tf-btn" onclick="setTimeFilter('year')" id="tf-year" data-tooltip="Filter analytics to show all-time data by years">Year</button>
       </div>
     </div>
     
@@ -141,7 +141,8 @@
     <div class="chart-card">
       <div class="chart-header">
         <span class="chart-title">Habit comparison</span>
-        <select class="chart-select" id="comp-select" onchange="switchCompChart()" data-tooltip="Change comparison chart type">
+        <select class="chart-select" id="comp-select" onchange="switchCompChart()" data-tooltip="Change how the habit comparison data is visually represented">
+          <option value="mountain">Mountain Peak Profile</option>
           <option value="horizontalBar">Bar (Horizontal)</option>
           <option value="bar">Bar (Vertical)</option>
           <option value="line">Line (Neon)</option>
@@ -155,13 +156,14 @@
     <div class="chart-card">
       <div class="chart-header">
         <span class="chart-title">Overall distribution</span>
-        <select class="chart-select" id="dist-select" onchange="switchDistChart()">
+        <select class="chart-select" id="dist-select" onchange="switchDistChart()" data-tooltip="Change how the overall distribution data is visually represented">
+          <option value="mountain">Mountain Peak Profile</option>
           <option value="doughnut">Donut</option>
           <option value="pie">Pie</option>
           <option value="polarArea">Polar Area</option>
         </select>
       </div>
-      <div style="position:relative;height:240px"><canvas id="distChart"></canvas></div>
+      <div style="position:relative;height:280px"><canvas id="distChart"></canvas></div>
     </div>
 
     <div class="chart-card" style="padding-bottom:10px;">
