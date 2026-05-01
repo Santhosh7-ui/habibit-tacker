@@ -15,6 +15,7 @@ const COLORS=['#6C63FF','#FF6584','#43C59E','#F59E0B','#3B82F6','#EF4444','#8B5C
 
 let habits=[], selEmoji=EMOJIS[0], selColor=COLORS[0], currentView='today', currentHabitId=null, detailHabit=null;
 let charts={trend:null, weekly:null, rate:null, comp:null, dist:null};
+let currentAnalyticsTimeFilter = 'day';
 
 function dk(d){return d.toISOString().slice(0,10)}
 function todayKey(){return dk(new Date())}
@@ -28,6 +29,23 @@ function showToast(msg) {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = msg;
   c.appendChild(t); setTimeout(()=>t.remove(), 3000);
+}
+
+function initTooltips() {
+  const tooltip = document.getElementById('global-tooltip');
+  document.addEventListener('mouseover', (e) => {
+    const target = e.target.closest('[data-tooltip]');
+    if (target) {
+      tooltip.textContent = target.getAttribute('data-tooltip');
+      const rect = target.getBoundingClientRect();
+      tooltip.style.left = rect.left + (rect.width / 2) + 'px';
+      tooltip.style.top = rect.top + 'px';
+      tooltip.classList.add('show');
+    }
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (e.target.closest('[data-tooltip]')) tooltip.classList.remove('show');
+  });
 }
 
 async function fetchQuote() {
@@ -313,6 +331,27 @@ function renderDetail(h){
   buildTrendChart(h);buildWeeklyChart(h);buildRateChart(h);
 }
 
+function setTimeFilter(filter) {
+  currentAnalyticsTimeFilter = filter;
+  document.querySelectorAll('.tf-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('tf-' + filter).classList.add('active');
+  renderAnalytics();
+}
+
+function getAggregatedData(h, filter) {
+  if (filter === 'day') return rate30(h); // Use 30-day rate for "Day" view
+  
+  let total = 0;
+  const now = new Date();
+  Object.keys(h.completions).forEach(k => {
+    if(!h.completions[k]) return;
+    const d = new Date(k);
+    if (filter === 'month' && d.getFullYear() === now.getFullYear()) total++;
+    if (filter === 'year') total++; // all time
+  });
+  return total;
+}
+
 function renderAnalytics(){
   if(!habits.length){
     document.getElementById('a-stats').innerHTML='';
@@ -320,20 +359,34 @@ function renderAnalytics(){
     document.getElementById('leaderboard').innerHTML='';return;
   }
   const tot=habits.length,done=habits.filter(h=>h.completions[todayKey()]).length;
-  const avg=Math.round(habits.reduce((a,h)=>a+rate30(h),0)/tot);
+  
+  // Calculate average based on filter
+  const aData=habits.map(h=>getAggregatedData(h, currentAnalyticsTimeFilter));
+  const avg=tot > 0 ? Math.round(aData.reduce((a,b)=>a+b,0)/tot) : 0;
+  
+  let metricLabel = currentAnalyticsTimeFilter === 'day' ? 'last 30 days (%)' : 
+                    currentAnalyticsTimeFilter === 'month' ? 'this year (days)' : 'all time (days)';
+
   document.getElementById('a-stats').innerHTML=`
-    <div class="stat-card c1"><div class="stat-label">Avg rate</div><div class="stat-val">${avg}%</div><div class="stat-sub">last 30 days</div></div>
+    <div class="stat-card c1"><div class="stat-label">Avg Completion</div><div class="stat-val">${avg}</div><div class="stat-sub">${metricLabel}</div></div>
     <div class="stat-card c2"><div class="stat-label">Today done</div><div class="stat-val">${done}/${tot}</div><div class="stat-sub">habits</div></div>
   `;
   
   const compType=document.getElementById('comp-select').value;
+  let chartType = compType;
+  if(compType==='horizontalBar') chartType = 'bar'; // horizontal is handled via indexAxis
+  
   const aLabels=habits.map(h=>h.emoji+' '+h.name.slice(0,12));
-  const aData=habits.map(h=>rate30(h));
   const aBg=habits.map(h=>h.color+'dd');
   const isHoriz=compType==='horizontalBar',isRadar=compType==='radar',isPolar=compType==='polarArea';
   
   destroyChart('comp');
-  const compCfg={type:isHoriz?'bar':compType,data:{labels:aLabels,datasets:[{label:'30-day %',data:aData,backgroundColor:aBg,borderColor:habits.map(h=>h.color),borderWidth:isRadar||isPolar?2:0,borderRadius:(!isRadar&&!isPolar)?6:0}]},options:{indexAxis:isHoriz?'y':'x',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:(isRadar)?{r:{beginAtZero:true,max:100,ticks:{stepSize:25,font:{size:9,family:'Inter'}}}}:(isPolar)?{}:{x:{grid:{display:!isHoriz},ticks:{font:{size:10,family:'Inter'}}},y:{max:isHoriz?undefined:100,ticks:{callback:v=>isHoriz?v:v+'%',font:{size:10,family:'Inter'}},grid:{color:'rgba(128,128,128,.1)'}}}}};
+  const compCfg={
+    type:chartType,
+    data:{labels:aLabels,datasets:[{label: metricLabel,data:aData,backgroundColor:aBg,borderColor:habits.map(h=>h.color),borderWidth:isRadar||isPolar||chartType==='line'?2:0,borderRadius:(!isRadar&&!isPolar&&chartType!=='line')?6:0, fill: chartType==='line'?false:true, tension: chartType==='line'?0.4:0}]},
+    options:{indexAxis:isHoriz?'y':'x',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:(isRadar)?{r:{beginAtZero:true,ticks:{font:{size:9,family:'Inter'}}}}:(isPolar)?{}:{x:{grid:{display:!isHoriz},ticks:{font:{size:10,family:'Inter'}}},y:{beginAtZero:true,ticks:{font:{size:10,family:'Inter'}},grid:{color:'rgba(128,128,128,.1)'}}}},
+    plugins: chartType === 'line' ? [neonLinePlugin] : []
+  };
   charts.comp=new Chart(document.getElementById('compChart'),compCfg);
   
   const distType=document.getElementById('dist-select').value;
@@ -347,7 +400,6 @@ function renderAnalytics(){
       <div class="lb-emoji" style="background:${h.color}22;box-shadow:0 2px 8px ${h.color}33">${h.emoji}</div>
       <span class="lb-name">${h.name}</span>
       <span class="lb-val" style="color:${h.color}">🔥 ${calcStreak(h)}</span>
-      <span style="font-size:11px;color:var(--muted);margin-left:12px;font-weight:600;width:30px;text-align:right">${rate30(h)}%</span>
     </div>
   `).join('');
 }
@@ -361,6 +413,7 @@ function confirmClear(){
 async function init(){
   Chart.defaults.color = '#9ca3af';
   Chart.defaults.font.family = 'Inter';
+  initTooltips();
   await load();
   fetchQuote();
   setInterval(fetchQuote, 30000); // auto-rotate quote every 30s

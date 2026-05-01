@@ -20,11 +20,11 @@
 <body>
 
 <div class="topbar">
-  <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()" data-tooltip="Open Navigation Menu">
     <span></span><span></span><span></span>
   </button>
   <span class="topbar-logo" id="topbar-title">HabitFlow</span>
-  <button class="btn-add" onclick="showModal()">+ Add</button>
+  <button class="btn-add" onclick="showModal()" data-tooltip="Create a new habit"> + Add</button>
 </div>
 
 <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
@@ -35,9 +35,9 @@
   </div>
   <div style="padding:12px 0">
     <ul class="sidebar-nav">
-      <li><a onclick="navigate('today')" id="nav-today" class="active">🏠 &nbsp;Today</a></li>
-      <li><a onclick="navigate('analytics')" id="nav-analytics">📊 &nbsp;Analytics</a></li>
-      <li><a onclick="navigate('settings')" id="nav-settings">⚙️ &nbsp;Settings</a></li>
+      <li><a onclick="navigate('today')" id="nav-today" class="active" data-tooltip="View today's habits">🏠 &nbsp;Today</a></li>
+      <li><a onclick="navigate('analytics')" id="nav-analytics" data-tooltip="See overall progress">📊 &nbsp;Analytics</a></li>
+      <li><a onclick="navigate('settings')" id="nav-settings" data-tooltip="Adjust your preferences">⚙️ &nbsp;Settings</a></li>
     </ul>
   </div>
   <div class="sidebar-section">My Habits</div>
@@ -49,8 +49,8 @@
 
   <!-- TODAY -->
   <div class="view active" id="view-today">
-    <div class="quote-banner" id="quote-banner">
-      <button class="quote-refresh" onclick="fetchQuote()">↻ New</button>
+    <div class="quote-banner" id="quote-banner" data-tooltip="Motivational quote of the day">
+      <button class="quote-refresh" onclick="fetchQuote()" data-tooltip="Get a new quote">↻ New</button>
       <div class="quote-text" id="q-text">Loading inspiration...</div>
       <div class="quote-author" id="q-author"></div>
     </div>
@@ -127,14 +127,24 @@
 
   <!-- ANALYTICS -->
   <div class="view" id="view-analytics">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">Overview</h2>
+      <div class="time-filter">
+        <button class="tf-btn active" onclick="setTimeFilter('day')" id="tf-day" data-tooltip="Last 30 days">Day</button>
+        <button class="tf-btn" onclick="setTimeFilter('month')" id="tf-month" data-tooltip="Last 12 months">Month</button>
+        <button class="tf-btn" onclick="setTimeFilter('year')" id="tf-year" data-tooltip="All time by year">Year</button>
+      </div>
+    </div>
+    
     <div class="stat-grid" id="a-stats"></div>
     
     <div class="chart-card">
       <div class="chart-header">
         <span class="chart-title">Habit comparison</span>
-        <select class="chart-select" id="comp-select" onchange="switchCompChart()">
+        <select class="chart-select" id="comp-select" onchange="switchCompChart()" data-tooltip="Change comparison chart type">
           <option value="horizontalBar">Bar (Horizontal)</option>
           <option value="bar">Bar (Vertical)</option>
+          <option value="line">Line (Neon)</option>
           <option value="radar">Radar</option>
           <option value="polarArea">Polar Area</option>
         </select>
@@ -208,6 +218,7 @@
 </div>
 
 <div class="toast-container" id="toast-container"></div>
+<div id="global-tooltip" class="custom-tooltip"></div>
 
 <!-- App logic -->
 <script src="app.js"></script>

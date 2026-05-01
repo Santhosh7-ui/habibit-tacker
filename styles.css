@@ -412,6 +412,62 @@ body{
 @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes toastOut{to{opacity:0;transform:translateY(10px) scale(.95)}}
 
+/* ===== TIME FILTER (ANALYTICS) ===== */
+.time-filter {
+  display: flex;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid var(--border);
+}
+.tf-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Inter', sans-serif;
+}
+.tf-btn:hover { color: var(--text); }
+.tf-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* ===== CUSTOM TOOLTIP ===== */
+.custom-tooltip {
+  position: absolute;
+  background: rgba(19, 19, 43, 0.95);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transform: translate(-50%, 8px) scale(0.95);
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.custom-tooltip.show {
+  opacity: 1;
+  transform: translate(-50%, -8px) scale(1);
+}
+@media(prefers-color-scheme:light){
+  .custom-tooltip {
+    background: #1a1a2e;
+  }
+}
+
 /* ===== RESPONSIVE ===== */
 @media(min-width:768px){
   .main{padding:28px 24px 48px}
