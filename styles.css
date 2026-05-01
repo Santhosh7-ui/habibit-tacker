@@ -224,10 +224,17 @@ body{
 
 /* ===== CHART CARDS ===== */
 .chart-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:20px;margin-bottom:16px;transition:.3s;
+  background:var(--surface);border:none;border-radius:20px;
+  padding:24px;margin-bottom:20px;transition:.3s;
+  box-shadow:0 8px 32px rgba(108,99,255,0.05);
 }
-.chart-card:hover{box-shadow:var(--shadow)}
+@media(prefers-color-scheme:dark){
+  .chart-card{
+    background:linear-gradient(145deg, var(--surface), rgba(19,19,43,0.95));
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  }
+}
+.chart-card:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(108,99,255,0.08);}
 .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .chart-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
 .chart-select{
@@ -240,6 +247,34 @@ body{
 }
 .chart-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.12)}
 .chart-select:hover{border-color:var(--accent)}
+
+/* Blinking Dot for Graphs */
+.blinking-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 0 8px var(--dot-color, #6C63FF);
+  transition: left 0.1s linear, top 0.1s linear, opacity 0.3s;
+}
+.blinking-dot::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: var(--dot-color, #6C63FF);
+  animation: dotPulse 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: -1;
+  opacity: 0.7;
+}
+@keyframes dotPulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
 
 /* ===== HEATMAP ===== */
 .heatmap-wrap{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}

@@ -198,6 +198,40 @@ function switchRateChart(){if(detailHabit)buildRateChart(detailHabit)}
 function switchCompChart(){renderAnalytics()}
 function switchDistChart(){renderAnalytics()}
 
+const neonLinePlugin = {
+  id: 'neonLine',
+  beforeDatasetsDraw: (chart) => {
+    if(chart.config.type !== 'line') return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.shadowColor = chart.data.datasets[0].borderColor;
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 4;
+  },
+  afterDatasetsDraw: (chart) => {
+    if(chart.config.type !== 'line') return;
+    chart.ctx.restore();
+  }
+};
+
+function updateBlinkingDot(chart, h) {
+  const dot = document.getElementById('trend-blinking-dot');
+  if (!dot) return;
+  if (chart.config.type !== 'line') { dot.style.display = 'none'; return; }
+  
+  const meta = chart.getDatasetMeta(0);
+  if (!meta || !meta.data.length) { dot.style.display = 'none'; return; }
+  
+  const lastPoint = meta.data[meta.data.length - 1];
+  if (!lastPoint || isNaN(lastPoint.x) || isNaN(lastPoint.y)) { dot.style.display = 'none'; return; }
+  
+  dot.style.left = lastPoint.x + 'px';
+  dot.style.top = lastPoint.y + 'px';
+  dot.style.setProperty('--dot-color', h.color);
+  dot.style.display = 'block';
+}
+
 function buildTrendChart(h){
   destroyChart('trend');
   const {labels,data}=get30Labels(h);
@@ -205,7 +239,39 @@ function buildTrendChart(h){
   let chartType = type;
   if(type==='area' || type==='stepped') chartType='line';
   
-  const cfg={type:chartType,data:{labels,datasets:[{data,borderColor:h.color,backgroundColor:type==='area'?h.color+'22':type==='bar'?h.color+'dd':h.color+'22',fill:type==='area',tension:type==='stepped'?0:0.4,stepped:type==='stepped',pointRadius:type==='scatter'?4:0,borderWidth:2,borderSkipped:false,borderRadius:type==='bar'?4:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,0,0,0.8)',titleFont:{family:'Inter'},bodyFont:{family:'Inter'},padding:10,cornerRadius:8,displayColors:false}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:'Inter'}},grid:{display:false}},y:{min:0,max:1,ticks:{stepSize:1,font:{size:10,family:'Inter'}},grid:{color:'rgba(128,128,128,.1)'}}}}};
+  const delayBetweenPoints = 1500 / data.length;
+  const previousY = (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(0) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
+  
+  const animationConfig = (chartType === 'line' && type !== 'scatter') ? {
+    x: {
+      type: 'number', easing: 'linear', duration: delayBetweenPoints, from: NaN,
+      delay(ctx) { if (ctx.type !== 'data' || ctx.xStarted) return 0; ctx.xStarted = true; return ctx.index * delayBetweenPoints; }
+    },
+    y: {
+      type: 'number', easing: 'linear', duration: delayBetweenPoints, from: previousY,
+      delay(ctx) { if (ctx.type !== 'data' || ctx.yStarted) return 0; ctx.yStarted = true; return ctx.index * delayBetweenPoints; }
+    },
+    onComplete: (animation) => { updateBlinkingDot(animation.chart, h); }
+  } : false;
+  
+  const dot = document.getElementById('trend-blinking-dot');
+  if(dot) dot.style.display = 'none';
+  
+  const cfg={
+    type:chartType,
+    data:{labels,datasets:[{data,borderColor:h.color,backgroundColor:type==='area'?h.color+'22':type==='bar'?h.color+'dd':h.color+'22',fill:type==='area',tension:type==='stepped'?0:0.15,stepped:type==='stepped',pointRadius:0,borderWidth:3,borderSkipped:false,borderRadius:type==='bar'?4:0}]},
+    options:{
+      animation: animationConfig,
+      responsive:true,maintainAspectRatio:false,
+      onResize: (chart) => { if(dot && dot.style.display !== 'none') updateBlinkingDot(chart, h); },
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,0,0,0.8)',titleFont:{family:'Inter'},bodyFont:{family:'Inter'},padding:10,cornerRadius:8,displayColors:false}},
+      scales:{
+        x:{grid:{display:false},border:{display:false},ticks:{maxTicksLimit:6,font:{size:10,family:'Inter'}}},
+        y:{min:0,max:1,grid:{display:false},border:{display:false},ticks:{display:false}}
+      }
+    },
+    plugins: [neonLinePlugin]
+  };
   charts.trend=new Chart(document.getElementById('trendChart'),cfg);
 }
 
